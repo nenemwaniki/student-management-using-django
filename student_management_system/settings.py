@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+import json
 import dj_database_url
 import os
 from pathlib import Path
@@ -31,6 +32,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ['smswithdjango.herokuapp.com']
 ALLOWED_HOSTS = []  # Not recommended but useful in dev mode
 
+SITE_ID = 2
 
 # Application definition
 
@@ -42,9 +44,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     # My Apps
-    'main_app.apps.MainAppConfig'
+    'main_app.apps.MainAppConfig',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +65,7 @@ MIDDLEWARE = [
 
     # Third Part Middleware
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 
     # My Middleware
     'main_app.middleware.LoginCheckMiddleWare',
@@ -154,16 +162,30 @@ TIME_ZONE = 'Africa/Lagos'
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_mails")
 
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-
 EMAIL_HOST_USER = os.environ.get('EMAIL_ADDRESS')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 # DEFAULT_FROM_EMAIL = "Student Management System <admin@admin.com>"
 
+# Static files settings
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Database settings
 prod_db = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(prod_db)
+
+# Google OAuth2 settings
+GOOGLE_OAUTH2_CLIENT_SECRETS_FILE = os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRETS_FILE')
+CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, r'/home/munene/code/student-management-using-django/credentials.json')
+
+with open(CLIENT_SECRETS_FILE, 'r') as file:
+    client_secrets = json.load(file)['web']
+
+GOOGLE_OAUTH2_CLIENT_ID = client_secrets['client_id']
+GOOGLE_OAUTH2_CLIENT_SECRET = client_secrets['client_secret']
+
+SCOPES = ['https://www.googleapis.com/auth/calendar']
