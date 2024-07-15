@@ -5,6 +5,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.models import SocialApp, SocialAccount
+from allauth.socialaccount.helpers import complete_social_login
+from django.views.decorators.csrf import csrf_exempt
 
 from .EmailBackend import EmailBackend
 from .models import Attendance, Session, Subject
@@ -23,44 +28,76 @@ def login_page(request):
     return render(request, 'main_app/login.html')
 
 
+@csrf_exempt
 def doLogin(request, **kwargs):
-    if request.method != 'POST':
+    if request.method == 'GET':
         return HttpResponse("<h4>Denied</h4>")
-    else:
-        #Google recaptcha
+
+    if 'g-recaptcha-response' in request.POST:
+        # Google reCAPTCHA verification
         captcha_token = request.POST.get('g-recaptcha-response')
         captcha_url = "https://www.google.com/recaptcha/api/siteverify"
-        captcha_key = "6LfswtgZAAAAABX9gbLqe-d97qE2g1JP8oUYritJ"
+        captcha_key = settings.RECAPTCHA_SECRET_KEY
         data = {
             'secret': captcha_key,
             'response': captcha_token
         }
-        # Make request
         try:
             captcha_server = requests.post(url=captcha_url, data=data)
             response = json.loads(captcha_server.text)
-            if response['success'] == False:
+            if not response.get('success'):
                 messages.error(request, 'Invalid Captcha. Try Again')
                 return redirect('/')
         except:
             messages.error(request, 'Captcha could not be verified. Try Again')
             return redirect('/')
-        
-        #Authenticate
-        user = EmailBackend.authenticate(request, username=request.POST.get('email'), password=request.POST.get('password'))
-        if user != None:
-            login(request, user)
-            if user.user_type == '1':
-                return redirect(reverse("admin_home"))
-            elif user.user_type == '2':
-                return redirect(reverse("staff_home"))
-            else:
-                return redirect(reverse("student_home"))
+
+    # Check if the request is for Google Sign-In
+    if 'google_login' in request.POST:
+        try:
+            # Get the social app
+            social_app = SocialApp.objects.get(provider='google')
+
+            # Adapter setup
+            adapter = GoogleOAuth2Adapter()
+            client = OAuth2Client(social_app.client_id, social_app.secret)
+            token = request.POST.get('google_token')
+
+            # Complete the social login
+            login_response = complete_social_login(request, token, adapter, client)
+            if isinstance(login_response, HttpResponse):
+                return login_response
+
+            if login_response.user:
+                user = login_response.user
+                backend = 'allauth.account.auth_backends.AuthenticationBackend'
+                login(request, user, backend=backend)
+                if user.user_type == '1':
+                    return redirect(reverse("admin_home"))
+                elif user.user_type == '2':
+                    return redirect(reverse("staff_home"))
+                else:
+                    return redirect(reverse("student_home"))
+        except SocialApp.DoesNotExist:
+            messages.error(request, 'Google login not configured properly.')
+            return redirect('/')
+
+    # Traditional email/password authentication
+    email = request.POST.get('email')
+    password = request.POST.get('password')
+    user = EmailBackend.authenticate(request, username=email, password=password)
+    if user is not None:
+        backend = 'main_app.EmailBackend.EmailBackend'
+        login(request, user, backend=backend)
+        if user.user_type == '1':
+            return redirect(reverse("admin_home"))
+        elif user.user_type == '2':
+            return redirect(reverse("staff_home"))
         else:
-            messages.error(request, "Invalid details")
-            return redirect("/")
-
-
+            return redirect(reverse("student_home"))
+    else:
+        messages.error(request, "Invalid details")
+        return redirect("/")
 
 def logout_user(request):
     if request.user != None:

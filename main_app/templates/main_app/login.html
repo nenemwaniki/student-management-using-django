@@ -1,4 +1,5 @@
 {% load static %}
+{% load socialaccount %}
 <!DOCTYPE html>
 <html>
 
@@ -64,7 +65,6 @@
                     <div class="input-group mb-3">
                         <div class="g-recaptcha" data-sitekey="6LfswtgZAAAAAJ7bhwqZZtDpBsc75ekH6FWA4Fnt"></div>
 
-                    </div>
                     <div class="row">
                         <div class="col-8">
                             <div class="icheck-primary">
@@ -89,8 +89,27 @@
                     <a href="{% url 'password_reset' %}">I forgot my password</a>
                 </p>
 
+
             </div>
             <!-- /.login-card-body -->
+             <!-- Google login button -->
+             <form method="post" action="doLogin/">
+              {% csrf_token %}
+              <input type="hidden" name="google_login" value="1">
+              <input type="hidden" name="google_token" id="google_token">
+              <button type="button" onclick="signInWithGoogle()">Login with Google</button>
+          </form>
+
+          <script src="https://apis.google.com/js/platform.js" async defer></script>
+          <script>
+              function signInWithGoogle() {
+                  gapi.auth2.getAuthInstance().signIn().then(function(googleUser) {
+                      var id_token = googleUser.getAuthResponse().id_token;
+                      document.getElementById('google_token').value = id_token;
+                      document.forms[1].submit();
+                  });
+              }
+          </script>
         </div>
     </div>
     <!-- /.login-box -->

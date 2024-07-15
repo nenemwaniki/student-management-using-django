@@ -32,7 +32,9 @@ DEBUG = True
 # ALLOWED_HOSTS = ['smswithdjango.herokuapp.com']
 ALLOWED_HOSTS = []  # Not recommended but useful in dev mode
 
-SITE_ID = 2
+SITE_ID = 3
+
+
 
 # Application definition
 
@@ -89,6 +91,17 @@ TEMPLATES = [
     },
 ]
 
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
 WSGI_APPLICATION = 'student_management_system.wsgi.application'
 
 
@@ -156,7 +169,13 @@ MEDIA_URL = '/media/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = 'main_app.CustomUser'
-AUTHENTICATION_BACKENDS = ['main_app.EmailBackend.EmailBackend']
+# settings.py
+
+AUTHENTICATION_BACKENDS = [
+    'main_app.EmailBackend.EmailBackend',  # Your custom authentication backend
+    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth's authentication backend
+]
+
 TIME_ZONE = 'Africa/Lagos'
 
 # EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
@@ -189,3 +208,11 @@ GOOGLE_OAUTH2_CLIENT_ID = client_secrets['client_id']
 GOOGLE_OAUTH2_CLIENT_SECRET = client_secrets['client_secret']
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+# Allauth settings
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_EMAIL_REQUIRED = True
+RECAPTCHA_SECRET_KEY  = "6LfswtgZAAAAABX9gbLqe-d97qE2g1JP8oUYritJ"
+
+RECAPTCHA_SITE_KEY  = "6LfswtgZAAAAABX9gbLqe-d97qE2g1JP8oUYritJ"
