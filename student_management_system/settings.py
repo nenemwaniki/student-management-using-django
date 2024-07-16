@@ -199,7 +199,7 @@ DATABASES['default'].update(prod_db)
 
 # Google OAuth2 settings
 GOOGLE_OAUTH2_CLIENT_SECRETS_FILE = os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRETS_FILE')
-CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, r'/home/munene/code/student-management-using-django/credentials.json')
+CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, r'C:/Users/Muchunu Magu/Documents/Django/student-management-using-django/credentials.json')
 
 with open(CLIENT_SECRETS_FILE, 'r') as file:
     client_secrets = json.load(file)['web']
